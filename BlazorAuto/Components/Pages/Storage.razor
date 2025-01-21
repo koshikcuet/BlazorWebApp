@@ -1,0 +1,55 @@
+﻿@page "/storage"
+@attribute [StreamRendering]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject ProtectedSessionStorage ProtectedSessionStore
+@inject ProtectedLocalStorage ProtectedLocalStore
+@inject CartService CartService
+
+<PageTitle>Storage</PageTitle>
+<h1>Storage</h1>
+User name: @UserName
+<input @bind-value="@UserName" @bind-value:event="oninput" />
+<button class="btn btn-primary" @onclick="SaveUserName">Save</button>
+
+<div>
+    <span>Menu</span>
+    <span>Cart size: @CartSize</span>
+</div>
+
+<Product Name="Mango"></Product>
+<Product Name="Banana"></Product>
+<Product Name="Olive"></Product>
+
+@code {
+    private string UserName = "";
+    private int CartSize { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            UserName = (await ProtectedSessionStore.GetAsync<string>("UserName")).Value ?? "";
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveUserName()
+    {
+        await ProtectedSessionStore.SetAsync("UserName", UserName);
+        await ProtectedLocalStore.SetAsync("UserName", UserName);
+    }
+
+    protected override void OnInitialized()
+    {
+        CartService.CartChanged += OnCartChanged;
+    }
+
+    private void OnCartChanged(object sender, CartEventArgs args)
+    {
+        CartSize = CartService.GetTotalCount();
+        StateHasChanged();
+    }
+
+}

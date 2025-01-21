@@ -1,0 +1,123 @@
+﻿@page "/databind"
+@rendermode InteractiveAuto
+
+<h3>DataBind React Examples</h3>
+<p>
+    @person.Amount
+</p>
+<p>
+    <input type="number"
+           @bind-value="person.Amount"
+           @bind-value:event="oninput" />
+</p>
+<p>
+    <label>
+        <input type="checkbox"
+               @bind-value="person.isActive" />
+        &nbsp;Is Active
+    </label>
+    <br />
+    Is Active: @person.isActive
+</p>
+<p>
+    <label>
+        <input type="radio"
+               value="1"
+               name="group"
+               checked="@(selectedGroup == 1)"
+               @onclick="()=>selectedGroup = 1" />1
+    </label>
+    <br />
+    <label>
+        <input type="radio"
+               value="2"
+               name="group"
+               checked="@(selectedGroup == 2)"
+               @onclick="()=>selectedGroup = 2" />2
+    </label>
+    <br />
+    @selectedGroup
+</p>
+<p>
+    <select @bind="selectedLocationId">
+        
+        @foreach (var loc in person.Locations)
+        {
+            <option value="@loc.Id">@loc.City</option>
+        }
+    </select>
+    <br />
+    @selectedLocationId
+</p>
+<p>
+    <ul>
+            @foreach (var loc in person.Locations)
+            {
+            <li>@loc.City, @loc.ProvState, @loc.Country</li>
+            }
+    </ul>
+</p>
+<table class="table">
+  @foreach(var loc in person.Locations)
+  {
+    <tr>
+      <td>@loc.Id</td>
+      <td><input type="text" 
+                 class="form-control" 
+                 @bind-value="@loc.City" 
+                 @bind-value:event="oninput" /></td>
+      <td><input type="text" 
+                 class="form-control" 
+                 @bind-value="@loc.Country" 
+                 @bind-value:event="oninput" /></td>
+      <td><input type="text" 
+                 class="form-control" 
+                 @bind-value="@loc.ProvState" 
+                 @bind-value:event="oninput" /></td>
+    </tr>
+  }
+</table>
+
+
+@code {
+
+    IndexViewModel person = null;
+    int selectedGroup = 1;
+    int selectedLocationId = 0;
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+
+        person = new IndexViewModel
+            {
+                SalesPerson = "Alex",
+                Amount = 15000,
+                Locations = new List<Location> {
+            new Location { Id=1, City = "Toronto", ProvState="Ontario", Country="Canada"},
+            new Location { Id = 2, City = "Montreal", ProvState="Quebec", Country="Canada" }
+                }
+            };
+    }
+
+
+    #region "View Model"
+
+    class IndexViewModel
+    {
+        public string SalesPerson { get; set; }
+        public double Amount { get; set; }
+        public bool isActive { get; set; }
+        public List<Location> Locations;
+    }
+
+    class Location
+    {
+        public int Id { get; set; }
+        public string City { get; set; }
+        public string ProvState { get; set; }
+        public string Country { get; set; }
+    }
+
+    #endregion
+
+}

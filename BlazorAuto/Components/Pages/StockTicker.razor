@@ -1,0 +1,71 @@
+﻿@page "/stocks"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+@attribute [StreamRendering]
+@rendermode InteractiveServer
+@implements IAsyncDisposable
+
+
+<h3>Real-Time Stock Prices</h3>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Stock Symbol</th>
+            <th>Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var stock in stocks)
+        {
+            <tr>
+                <td>@stock.Key</td>
+                <td>@if (@stock.Value < 200)
+                    {
+                        <span style="color:red">@stock.Value</span>
+                    } else
+                    {
+                        <span style="color:blue">@stock.Value</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private HubConnection? hubConnection;
+    private Dictionary<string, decimal> stocks = new Dictionary<string, decimal>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl(Navigation.ToAbsoluteUri("/stockHub"))
+            .Build();
+
+        hubConnection.On<string, decimal>("ReceiveStockUpdate", (stockSymbol, price) =>
+        {
+            if (stocks.ContainsKey(stockSymbol))
+            {
+                stocks[stockSymbol] = price;
+            }
+            else
+            {
+                stocks.Add(stockSymbol, price);
+            }
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    //public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection != null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+}

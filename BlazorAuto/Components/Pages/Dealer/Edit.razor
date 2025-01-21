@@ -1,0 +1,199 @@
+﻿@page "/dealer/edit"
+@* @page "/dealer/edit/{id:int}" *@
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject NavigationManager NavManager
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Data.SqlClient
+@using Dapper
+@using System.Data
+
+@if (isadd == false)
+{
+    <h3>Edit Dealer</h3>
+} else
+{
+    <h3>Add new Dealer</h3>
+}
+
+
+@if (dlr != null)
+{
+    
+    <EditForm Model="dlr" FormName="formServer" OnValidSubmit="Submit">
+
+        <InputNumber @bind-Value="dlr.Code" hidden></InputNumber>
+
+        <div class="row mb-3">
+            <div class="col-2">
+                <label class="col-form-label">Name</label>
+            </div>
+            <div class="col-6">
+                <InputText @bind-Value="dlr.DNam" class="form-control"></InputText>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-2">
+                <label class="col-form-label">Salary</label>
+            </div>
+            <div class="col-6">
+                <InputNumber @bind-Value="dlr.Salary" class="form-control"></InputNumber>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-2">
+                <label class="col-form-label">Date of Birth</label>
+            </div>
+            <div class="col-6">
+                <InputDate @bind-Value="dlr.DOB" class="form-control"></InputDate>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-2">
+                <label class="col-form-label">Department</label>
+            </div>
+            <div class="col-6">
+                <InputSelect @bind-Value="dlr.Dept" class="form-select">
+                    <option value="">
+                        Select Department
+                    </option>
+                    @foreach (string dpt in depts)
+                    {
+                        <option value="@dpt">@dpt</option>
+                    }
+                    @if (dlr.Dept == "")
+                    {
+                        <option value="">Select Department</option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-2">
+                <label class="col-form-label">Gender</label>
+            </div>
+             <div class="col-6">
+                <InputRadioGroup id="team" @bind-Value="dlr.Gender" class="form-control">
+                    @foreach (var gnd in gndr)
+                    {
+                        <div class="form-check form-check-inline">
+                            <InputRadio Value="gnd" class="form-check-input" id="gnd" />
+                            <label class="form-check-label" for="gnd">
+                                @gnd
+                            </label>
+                        </div>
+                    }
+                </InputRadioGroup>
+                @*<input type="radio" checked="@(dlr.Gender == "Male")"
+                       name="Gender" @onchange="@(() => dlr.Gender = "Male")" />
+                <label>Male</label>
+
+                <input type="radio" checked="@(dlr.Gender == "Female")"
+                       name="Gender" @onchange="@(() => dlr.Gender = "Female")" />
+                <label>Female</label>*@
+            </div> 
+            
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-2">
+                <label class="col-form-label">Admin</label>
+            </div>
+            <div class="col-6">
+                <div class="form-check form-check-inline">
+                    <InputCheckbox @bind-Value="isAdm" id="chkadm" class="form-check-input"></InputCheckbox>
+                    <label class="form-check-label" for="chkadm">Admin</label>
+                </div>
+                
+            </div>
+        </div> 
+        <span style="color:red; font-size:medium">@errTx</span>
+        <br />
+        <button class="btn btn-primary" type="submit">Update</button>
+        &nbsp;
+        <a href="/dealer/dealer" class="btn btn-primary">Close</a>
+    </EditForm>
+    
+   
+}
+
+@code {
+    private int dlid = 0;
+    [SupplyParameterFromForm]
+    private xapi.Dealer? dlr { get; set; }
+    private string errTx = "";
+    List<string> depts = new List<string>();
+    List<string> gndr = new List<string>();
+    [SupplyParameterFromForm]
+    bool isAdm { get; set; }
+    bool isadd = false;
+
+    // [Parameter]
+    // public int Id { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("id", out var _initialCount))
+        {
+            dlid = Convert.ToInt32(_initialCount);
+            using (IDbConnection cn = new SqlConnection(mLib.getCon()))
+            {
+                if (dlid == 0)
+                {
+                    dlr = new xapi.Dealer();
+                    isadd = true;
+                } else
+                {
+                    dlr = cn.QuerySingle<xapi.Dealer>("select * from Dealer where code=" + dlid.ToString());
+                }
+
+                depts.AddRange(["Accounts", "IT Dept", "Admin"]);
+                gndr.AddRange(["Male", "Female"]);
+                isAdm = dlr.isAdmin == 0 ? false : true;
+            }
+
+        }
+    }
+
+    public void Submit()
+    {
+        if (dlr != null)
+        {
+            if (dlr.DNam == "")
+            {
+                errTx = "Please Enter name.";
+                return;
+            }
+
+            if (dlid == 0) // Add
+            {
+                using (IDbConnection cn = new SqlConnection(mLib.getCon()))
+                {
+                    dlr.isAdmin = isAdm == true ? 1 : 0;
+                    cn.Execute("Insert into dealer (DNam, Dept, Salary, Gender, isAdmin, DOB, imgf) Values (@DNam, @Dept, @Salary, @Gender, @isAdmin, @DOB, @imgf)", dlr);
+
+                }
+            } else
+            {
+                using (IDbConnection cn = new SqlConnection(mLib.getCon()))
+                {
+                    dlr.isAdmin = isAdm == true ? 1 : 0;
+                    cn.Execute("Update Dealer set DNam=@DNam, Dept=@Dept, Salary=@Salary, Gender=@Gender, isAdmin=@isAdmin, DOB=@DOB, imgf=@imgf Where Code=" + dlid.ToString(), dlr);
+                }
+            }
+            NavManager.NavigateTo("/dealer/dealer");
+        }
+        
+
+    }
+
+     
+
+
+
+}

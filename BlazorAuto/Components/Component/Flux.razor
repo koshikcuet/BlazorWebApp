@@ -1,0 +1,10 @@
+﻿@rendermode InteractiveServer  
+@inject CounterStore cstore
+<span>@cstore.GetState().Count</span>
+
+@code {
+    protected override void OnInitialized()
+    {
+       cstore.AddStateChangeListeners(() => { StateHasChanged(); });
+    }
+}

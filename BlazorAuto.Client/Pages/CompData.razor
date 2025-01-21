@@ -1,0 +1,109 @@
+﻿@page "/compdata"
+@rendermode InteractiveWebAssembly
+@* @rendermode @(new InteractiveServerRenderMode(false)) *@
+
+@inject Globv glov
+
+<Loader IsLoading="@isLoading"></Loader>
+<h3><TitleTag Title="Bangladesh" TColor="red"></TitleTag></h3>
+<TitleTag Title="Tiger" TColor="blue"></TitleTag>
+
+<p>Current Count : @cCount</p>
+<CountTag SetCurrentCount="SetCount"></CountTag>
+
+<p>&nbsp;</p>
+<div>
+    <button type="button" class="btn btn-success" @onclick=@(() => {reft.Show();})>Show</button>&nbsp;
+    <button type="button" class="btn btn-success" @onclick=@(() => {reft.Hide(); })>Hide</button>
+    <RefTag Title="Mahbub" @ref="reft"></RefTag>
+</div>
+<div>
+    <RenderTag id="email" Label="EMail">
+        <InputHtml>
+            <input type="email" class="form-control" id="email">
+        </InputHtml>
+    </RenderTag>
+    <RenderTag id="txtsalary" Label="Salary" tclr="red">
+        <InputHtml>
+            <input type="number" class="form-control" id="txtSalary">
+        </InputHtml>
+        <TestHtml>Error: Fatal Error</TestHtml>
+    </RenderTag>
+    <RenderTag id="pass" Label="Password">
+        <InputHtml>
+            <input type="password" class="form-control" id="pass">
+        </InputHtml>
+    </RenderTag>
+</div>
+        <RepeatTag Items="@customers">
+            <Header>
+               
+                <tr>
+                <th class="border-bottom text-bold">CompanyName</th>
+                <th class="border-bottom text-bold">ContactName</th>
+                <th class="border-bottom text-bold">PhoneNumber</th>
+                </tr>
+    
+            </Header>
+            
+            <Row Context="Customer">
+              
+               <tr>
+                    
+            <td>@Customer.CompanyName</td>
+            <td>@Customer.ContactName</td>
+            <td>@Customer.PhoneNumber</td>
+            </tr>
+        
+                
+            </Row>
+            
+        </RepeatTag>
+    
+@code {
+
+    private int cCount = 0;
+    private RefTag? reft;
+    private bool isInitialized = false;
+    private bool isLoading = true; // State to control loader
+    private List<Customer>? customers;
+    private PersistingComponentStateSubscription _subscription;
+    //private string? _username;
+
+    private void SetCount(int value)
+    {
+        cCount = value;
+    }
+            
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        if (customers == null)
+        {
+            using (HttpClient hct = new HttpClient())
+            {
+                customers = await hct.GetFromJsonAsync<List<Customer>>("https://zareer.vyingbrain.com/api/customer/mycust");
+            }
+        }
+
+    }
+    
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && !isInitialized)
+        {
+            isInitialized = true;
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+        
+    class Customer
+    {
+        public string CompanyName { get; set; }
+        public string ContactName { get; set; }
+        public string PhoneNumber { get; set; }
+    }
+
+
+}

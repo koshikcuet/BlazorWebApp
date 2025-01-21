@@ -1,0 +1,23 @@
+﻿@inject CartService CartService
+<div>
+    <span>@Name</span>
+    <button type="button" @onclick="AddToCart">
+        Add to cart
+        @if (InCart > 0)
+        {
+            <span> (@InCart)</span>
+        }
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public string Name { get; set; }
+
+    private int InCart => CartService.GetProductCount(Name);
+
+    private void AddToCart()
+    {
+        CartService.AddToCart(Name);
+    }
+}

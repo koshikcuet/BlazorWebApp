@@ -1,0 +1,100 @@
+﻿@page "/dealer/dealer"
+@attribute [StreamRendering]
+@rendermode InteractiveAuto
+@inject NavigationManager NavManager
+
+@using Microsoft.Data.SqlClient
+@using Dapper
+@using System.Data
+
+<h3>Dealer List</h3>
+<div class="row mt-3">
+    <a class="btn btn-warning btn-sm" href="/dealer/edit?id=0">Add</a>
+    <div>&nbsp;</div>
+    <table id="tbllist" class="table-striped table-bordered table" style="background-color: floralwhite; font-size:small">
+        <thead>
+            <tr>
+                <th>Dealer Name</th>
+                <th>Department</th>
+                <th>Salary</th>
+                <th>Gender</th>
+                <th>Admin</th>
+               
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var item in dlr)
+            {
+                <tr>
+                    <td>
+                        @item.DNam
+                    </td>
+                    <td>@item.Dept</td>
+                    <td style="text-align:right">
+                        @item.Salary
+                    </td>
+                    <td>
+                        @item.Gender
+                    </td>
+                    <td>
+                        @if (item.isAdmin == 1)
+                        {
+                            @:Admin
+                        }
+                        else
+                        {
+                            @:Employee
+                        }
+                    </td>
+                    <td style="white-space:nowrap">
+                         <a class="btn btn-success btn-sm" href="/dealer/edit?id=@item.Code">Edit</a>
+                        <button type="button" class="btn btn-danger btn-sm" @onclick="@(() => {Delete_Click(item.Code.ToString()); })">Delete</button>
+                        <ConfirmModal @ref="DeleteConfirmation" ConfirmationChanged="ConfirmDelete_Click" ConfirmationMessage=@($"Are you sure you want to delete \"{item.DNam}\"") ButtonYes="Delete ?" ButtonNo="Close ?" ConfirmationTitle="Delete Dealer">
+                         </ConfirmModal>
+                         
+                    </td>
+                    
+
+
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private List<xapi.Dealer> dlr = new List<xapi.Dealer>();
+    protected ConfirmBase? DeleteConfirmation { get; set; }
+
+    private string dataid = "";
+
+    protected override void OnInitialized()
+    {
+        using (IDbConnection cn = new SqlConnection(mLib.getCon()))
+        {
+            dlr = cn.Query<xapi.Dealer>("select * from Dealer order by code").ToList();
+        }
+    }
+
+    protected void Delete_Click(string dtid)
+    {
+        dataid = dtid;
+        DeleteConfirmation.Show();
+    }
+
+    protected void ConfirmDelete_Click(bool deleteConfirmed)
+    {
+        if (deleteConfirmed)
+        {
+            using (IDbConnection cn = new SqlConnection(mLib.getCon()))
+            {
+                cn.Execute("Delete from dealer where code=" + dataid);
+                dlr = cn.Query<xapi.Dealer>("select * from Dealer order by code").ToList();
+                StateHasChanged();
+                
+            }
+        }
+    }
+
+}
